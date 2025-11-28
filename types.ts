@@ -14,6 +14,7 @@ export interface BatchItem {
   processedBase64?: string;
   processedMimeType?: string;
   error?: string;
+  maskBase64?: string; // The visual guide for manual removal
 }
 
 export interface EditorState {

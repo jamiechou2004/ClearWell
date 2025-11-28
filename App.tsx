@@ -27,7 +27,11 @@ export default function App() {
       ));
 
       try {
-        const processedBase64 = await removeWatermark(nextItem.original.base64, nextItem.original.mimeType);
+        const processedBase64 = await removeWatermark(
+            nextItem.original.base64, 
+            nextItem.original.mimeType,
+            nextItem.maskBase64 // Pass the optional mask if user created one
+        );
         
         setBatchItems(prev => prev.map(item => 
           item.id === nextItem.id ? { 
@@ -72,6 +76,13 @@ export default function App() {
     setBatchItems(prev => prev.map(item => 
       item.id === id ? { ...item, processedBase64: newBase64 } : item
     ));
+  };
+
+  const handleManualMaskRequest = (id: string, maskBase64: string) => {
+      // Re-queue the item with the mask
+      setBatchItems(prev => prev.map(item => 
+          item.id === id ? { ...item, status: 'queued', maskBase64, processedBase64: undefined } : item
+      ));
   };
 
   const handleRemoveItem = (id: string) => {
@@ -164,7 +175,7 @@ export default function App() {
                     {[
                         { title: 'Batch Processing', desc: 'Upload 50+ images. Clearwell handles the queue automatically.' },
                         { title: 'Smart Restoration', desc: 'Gemini AI reconstructs the background, not just blurs it.' },
-                        { title: 'Studio Editor', desc: 'Fine-tune results with built-in brightness, contrast and crop tools.' }
+                        { title: 'Precise Control', desc: 'Manually select complex watermarks for perfect removal.' }
                     ].map((item, i) => (
                         <div key={i} className="p-5 rounded-2xl bg-slate-800/20 border border-slate-700/30 backdrop-blur-sm text-center">
                             <h3 className="font-semibold text-slate-200 mb-2">{item.title}</h3>
@@ -221,6 +232,7 @@ export default function App() {
                             <ComparisonView 
                                 item={selectedItem} 
                                 onUpdateProcessed={handleUpdateProcessed}
+                                onManualMaskRequest={handleManualMaskRequest}
                                 onBack={() => setSelectedId(null)}
                             />
                         </div>

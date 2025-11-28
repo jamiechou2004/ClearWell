@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
-import { Download, Sliders, Layers, ArrowLeft } from 'lucide-react';
+import { Download, Sliders, Layers, ArrowLeft, MousePointerClick } from 'lucide-react';
 import { BatchItem } from '../types';
 import { ImageEditor } from './ImageEditor';
+import { WatermarkSelector } from './WatermarkSelector';
 
 interface ComparisonViewProps {
   item: BatchItem;
   onUpdateProcessed: (id: string, newBase64: string) => void;
+  onManualMaskRequest: (id: string, maskBase64: string) => void;
   onBack: () => void;
 }
 
-export const ComparisonView: React.FC<ComparisonViewProps> = ({ item, onUpdateProcessed, onBack }) => {
+export const ComparisonView: React.FC<ComparisonViewProps> = ({ item, onUpdateProcessed, onManualMaskRequest, onBack }) => {
   const [showOriginal, setShowOriginal] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [mode, setMode] = useState<'view' | 'edit' | 'manual'>('view');
 
   // If we are still processing this item
   if (!item.processedBase64 && item.status === 'completed') {
@@ -30,17 +32,35 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ item, onUpdatePr
 
   const handleEditorSave = (newBase64: string) => {
       onUpdateProcessed(item.id, newBase64);
-      setIsEditing(false);
+      setMode('view');
   };
 
-  if (isEditing && item.processedBase64) {
+  const handleManualMaskConfirm = (maskBase64: string) => {
+      onManualMaskRequest(item.id, maskBase64);
+      setMode('view');
+  };
+
+  if (mode === 'edit' && item.processedBase64) {
       return (
           <div className="w-full h-full max-h-[85vh] animate-fade-in flex flex-col">
               <ImageEditor 
                 imageBase64={item.processedBase64}
                 mimeType={item.processedMimeType || 'image/png'}
                 onSave={handleEditorSave}
-                onCancel={() => setIsEditing(false)}
+                onCancel={() => setMode('view')}
+              />
+          </div>
+      );
+  }
+
+  if (mode === 'manual') {
+      return (
+          <div className="w-full h-full max-h-[85vh] animate-fade-in flex flex-col">
+              <WatermarkSelector 
+                imageBase64={item.original.base64} // Use original for masking
+                mimeType={item.original.mimeType}
+                onConfirm={handleManualMaskConfirm}
+                onCancel={() => setMode('view')}
               />
           </div>
       );
@@ -74,19 +94,29 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ item, onUpdatePr
              </div>
         </div>
        
-        <div className="flex gap-3 w-full md:w-auto">
+        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+          <button
+            disabled={item.status === 'processing'}
+            onClick={() => setMode('manual')}
+            className="whitespace-nowrap flex-none flex items-center px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <MousePointerClick className="w-4 h-4 mr-2" />
+            Manual Remove
+          </button>
+          
           <button
             disabled={item.status !== 'completed'}
-            onClick={() => setIsEditing(true)}
-            className="flex-1 md:flex-none justify-center flex items-center px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800"
+            onClick={() => setMode('edit')}
+            className="whitespace-nowrap flex-none flex items-center px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 text-white transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-slate-800"
           >
             <Sliders className="w-4 h-4 mr-2" />
-            Edit
+            Edit Result
           </button>
+          
           <button
             disabled={item.status !== 'completed'}
             onClick={downloadImage}
-            className="flex-1 md:flex-none justify-center flex items-center px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+            className="whitespace-nowrap flex-none flex items-center px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition-all text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
           >
             <Download className="w-4 h-4 mr-2" />
             Download

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, Clock, AlertCircle, Loader2, X } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle, Loader2, X, MousePointerClick } from 'lucide-react';
 import { BatchItem } from '../types';
 
 interface BatchListProps {
@@ -51,9 +51,12 @@ export const BatchList: React.FC<BatchListProps> = ({ items, selectedId, onSelec
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <p className={`text-sm font-medium truncate ${selectedId === item.id ? 'text-indigo-200' : 'text-slate-200'}`}>
-                {item.original.file.name}
-              </p>
+              <div className="flex items-center gap-2">
+                 <p className={`text-sm font-medium truncate ${selectedId === item.id ? 'text-indigo-200' : 'text-slate-200'}`}>
+                    {item.original.file.name}
+                </p>
+                {item.maskBase64 && <MousePointerClick className="w-3 h-3 text-indigo-400" />}
+              </div>
               <p className="text-xs text-slate-500 capitalize">{item.status}</p>
             </div>
 
